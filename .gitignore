@@ -1,0 +1,33 @@
+# Secrets — never commit private IDs, tokens, or service accounts
+.env
+.env.*
+.gs
+appsscript.json
+*credentials*.json
+*service-account*.json
+*token*.json
+.opencode/
+clasp.json
+
+# Spreadsheet / Apps Script private config
+config/private.js
+.config/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node / temp
+node_modules/
+dist/
+*.log
+tmp/
+temp/
+
+# Excel exports (contain live data, may contain private IDs)
+*.xlsx
+*.xls
+
+# Keep landing empty placeholder tracked via .gitkeep
+!landing/.gitkeep
