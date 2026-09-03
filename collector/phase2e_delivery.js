@@ -129,9 +129,8 @@ function deliverIssueFiW(issueId, dryRun) {
       continue;
     }
     try {
-      // Adapter: log only in this MVP (no real SMTP yet) — idempotent record
-      // To enable real email, replace this block with MailApp.sendEmail({to:email, subject:'Foundry/IP Weekly — ' + targetIssueId, htmlBody: rendered.html})
       Logger.log('Delivering ' + targetIssueId + ' to ' + email);
+      MailApp.sendEmail({to: email, subject: 'Foundry/IP Decision Intelligence — ' + targetIssueId, htmlBody: rendered.html});
       dl.getRange(dl.getLastRow()+1,1,1,7).setValues([[Utilities.getUuid(), targetIssueId, sid, email, 'SENT', Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss'), '']]);
       sent++;
     } catch(e){
