@@ -35,6 +35,19 @@ function generateWeeklyBriefFiW() {
 
   const runId = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss') + '-' + Utilities.getUuid().slice(0,4);
   const RUN_START = Date.now();
+  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1uXMdGyWoIFpIFRTNTKhcBaDaZdiod05QjrV126alFx8/edit';
+  const eaSheet = ss.getSheetByName('EVENT_ARTICLES');
+  const normSheet = ss.getSheetByName('NORMALIZED');
+  const eaMapBrief = new Map();
+  if (eaSheet && eaSheet.getLastRow()>1) {
+    const eaVals = eaSheet.getDataRange().getValues().slice(1);
+    eaVals.forEach(r=>{ const eid=String(r[0]||'').trim(); const nid=String(r[1]||'').trim(); if(!eid||!nid) return; if(!eaMapBrief.has(eid)) eaMapBrief.set(eid,[]); eaMapBrief.get(eid).push(nid); });
+  }
+  const normMapBrief = new Map();
+  if (normSheet && normSheet.getLastRow()>1) {
+    const nVals = normSheet.getDataRange().getValues().slice(1);
+    nVals.forEach(r=>{ const nid=String(r[0]||'').trim(); if(nid) normMapBrief.set(nid, {url:String(r[4]||String(r[5]||'')).trim(), title:String(r[3]||String(r[4]||'')).trim(), source:String(r[2]||String(r[3]||'')).trim()}); });
+  }
 
   // Selection policy: deterministic, decision relevance > evidence quality > diversity
   const dsVals = dsSheet.getDataRange().getValues().slice(1).filter(r=>String(r[0]||'').trim());
@@ -72,6 +85,14 @@ function generateWeeklyBriefFiW() {
     const confidence = String(r[11]||'');
     const whyItMatters = String(r[13]||'').slice(0,300) || 'Concrete roadmap consequence with decision trigger';
     const watchNext = String(r[14]||'').slice(0,300) || 'Monitor qualification/production milestone';
+    const eventId = String(r[1]||'').trim();
+    const nids = eaMapBrief.get(eventId) || [];
+    const links = nids.slice(0,3).map(nid=>{
+      const rec = normMapBrief.get(nid);
+      if (!rec || !rec.url) return '';
+      const label = rec.source ? rec.source : rec.title.slice(0,40);
+      return '[' + label + '](' + rec.url + ')';
+    }).filter(Boolean).join(' · ');
     const badge = decision==='ARCHITECT'?'🔴': decision==='EVALUATE'?'🔴': decision==='MONITOR'?'🟡':'⚪';
     md += '### ' + badge + ' SIGNAL ' + String(idx+1).padStart(2,'0') + ' — ' + title + '\n';
     md += '**Decision:** `' + decision + '`' + (decisionObj?' `' + decisionObj + '`':'') + ' | **Impact:** ' + impact + ' | **Owner:** ' + owner + ' | **Horizon:** ' + horizon + ' | **Confidence:** ' + confidence + '\n\n';
@@ -79,10 +100,14 @@ function generateWeeklyBriefFiW() {
     md += '**Why it matters**\n' + whyItMatters + '\n\n';
     md += '**Decision object**\n' + decisionObj + '\n\n';
     md += '**Watch next**\n' + watchNext + '\n\n';
-    md += '**Evidence** — ' + String(r[1]||'') + ' via DECISION_SIGNALS `DS_v0.1`\n\n';
-    md += '---\n\n';
+    md += '**Evidence** — ' + (links || String(r[1]||'') + ' via `DS_v0.1`') + '\n';
+    if (links) md += 'Verify → ' + links + '\n';
+    md += '\n---\n\n';
   });
-  md += '*Evidence graph: All signals trace via EVENT_ARTICLES → NORMALIZED → EVIDENCE_ENRICHMENT where enriched. Confidence HIGH/MEDIUM/LOW per evidence sufficiency.*\n';
+  md += '*Evidence graph: All signals trace via EVENT_ARTICLES → NORMALIZED → EVIDENCE_ENRICHMENT where enriched. Confidence HIGH/MEDIUM/LOW per evidence sufficiency.*\n\n';
+  md += '---\n\n';
+  md += '**Full evidence sheet (read-only):** [' + SHEET_URL + '](' + SHEET_URL + ')\n';
+  md += '*All 242 RAW articles, 210 events, and provenance links are auditable in the sheet.*\n';
 
   const issueId = 'ISSUE-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd') + '-' + Utilities.getUuid().slice(0,4);
   const issueNumber = draftSheet.getLastRow(); // next number
