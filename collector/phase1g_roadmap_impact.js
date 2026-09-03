@@ -97,17 +97,22 @@ function runRoadmapImpactFiWPhase1G() {
     // Gate B: ATTRIBUTED
     const attributed = arts.length>0 && arts.some(a=>a.sourceName);
 
-    // Gate C: CONSEQUENCE
+    // Gate C: CONSEQUENCE — semantic categories per docs/03-ROADMAP-IMPACT-TEST-v0.2-DRAFT.md §7, not keyword alone
+    // Must be manufacturing capacity, supply availability, chip/rack topology, etc. with surrounding evidence
     let consequence=false, consequenceType='NONE';
     const t = allText;
     if (/(yield|defect)/i.test(t)) { consequence=true; consequenceType='YIELD'; }
-    else if (/(hbm|nvhbm)/i.test(t)) { consequence=true; consequenceType='HBM'; }
-    else if (/(capacity|supply).*allocat|allocat.*capacity/i.test(t) && /(hbm|foundry|wafer|product)/i.test(t)) { consequence=true; consequenceType='CAPACITY'; }
-    else if (/(chiplet|ucie|cowos|packaging)/i.test(t)) { consequence=true; consequenceType='CHIPLET'; }
-    else if (/(pdk|process.*node|2nm|n2.*capacity)/i.test(t)) { consequence=true; consequenceType='PROCESS'; }
+    else if (/(hbm|nvhbm)/i.test(t) && /(capacity|supply|allocation|architecture)/i.test(t)) { consequence=true; consequenceType='HBM'; }
+    else if (/(hbm|nvhbm)/i.test(t) && /(rack|integration|architecture)/i.test(t)) { consequence=true; consequenceType='HBM'; }
+    else if (/(chiplet|ucie|cowos|packaging)/i.test(t) && /(capacity|architecture|specification|integration)/i.test(t)) { consequence=true; consequenceType='CHIPLET'; }
+    else if (/(chiplet|ucie|cowos|packaging)/i.test(t) && /(foundry|process|node)/i.test(t)) { consequence=true; consequenceType='CHIPLET'; }
+    else if (/(manufacturing capacity|wafer capacity|allocation|supply availability|shipment.*scale|deployment.*scale)/i.test(t) && /(foundry|hbm|product|capacity)/i.test(t)) { consequence=true; consequenceType='CAPACITY'; }
+    else if (/(rack.*design|compute tray|gpu.*rack|cpu.*core|exaflops|deployment architecture|cpu.*gpu.*dpu.*integration)/i.test(t) && /(amd|nvidia|helios|rackscale)/i.test(t)) { consequence=true; consequenceType='ARCHITECTURE'; }
+    else if (/(pdk|process.*node|2nm|n2.*capacity)/i.test(t) && /(foundry|process|node|qualification|tapeout)/i.test(t)) { consequence=true; consequenceType='PROCESS'; }
     else if (/(server.*dram|extended memory)/i.test(t)) { consequence=true; consequenceType='IP'; }
-    else if (/(cost|schedule|qualification)/i.test(t)) { consequence=true; consequenceType='QUALIFICATION'; }
-    // Microsoft AMD: title has at-scale cluster but no hbm/process keyword in desc (blank), so consequence false → will be INSUFFICIENT
+    else if (/(cost|schedule|qualification)/i.test(t) && /(foundry|process|product)/i.test(t)) { consequence=true; consequenceType='QUALIFICATION'; }
+    // Adversarial: rack-scale / at scale alone → NO (requires surrounding architecture/capacity evidence above)
+    // Microsoft AMD with enriched Helios rack 72 GPUs etc now matches ARCHITECTURE via rack.*design + amd/helios
 
     // Research / Supply status
     const isResearch = /(simulator|m3d|photonics|hbf|research)/i.test(allTitles);
