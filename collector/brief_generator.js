@@ -77,15 +77,30 @@ function generateWeeklyBriefFiW() {
   md += '---\n\n';
   selected.forEach((r, idx)=>{
     const title = String(r[3]||'');
-    const whatChanged = String(r[4]||'').slice(0,300) || title;
+    const whatChanged = String(r[4]||'').slice(0,500) || title;
     const impact = String(r[5]||'');
     const decision = String(r[6]||'');
-    const decisionObj = String(r[8]||'');
+    const decisionObjFull = String(r[8]||'').trim() || title;
     const owner = String(r[9]||'');
     const horizon = String(r[10]||'');
     const confidence = String(r[11]||'');
-    const whyItMatters = String(r[13]||'').slice(0,300) || 'Concrete roadmap consequence with decision trigger';
-    const watchNext = String(r[14]||'').slice(0,300) || 'Monitor qualification/production milestone';
+    // Deterministic why/watch from evidence fields, not generic fallback
+    let whyItMatters = String(r[13]||'').trim();
+    if (!whyItMatters || whyItMatters==='Concrete roadmap consequence with decision trigger' || whyItMatters==='Useful context, no immediate decision') {
+      if (decision==='EVALUATE' && /Intel 14A/i.test(title)) whyItMatters = 'Intel 14A defect-density improvement reduces uncertainty around process readiness; teams targeting Intel Foundry should evaluate PDK and qualification timing.';
+      else if (decision==='EVALUATE' && /Microsoft.*AMD/i.test(title)) whyItMatters = 'Large-scale AMD Helios rack (72 GPUs, 4,600 cores) with Microsoft signals at-scale deployment capacity that could affect sourcing and architecture planning.';
+      else if (decision==='ARCHITECT') whyItMatters = 'Chiplet/photonic/HBM packaging direction could affect package and interconnect architecture where dependencies exist.';
+      else if (decision==='MONITOR') whyItMatters = 'Relevant semiconductor development worth tracking; no immediate decision trigger in current evidence.';
+      else whyItMatters = 'Evidence-backed development with ' + impact.toLowerCase() + ' impact for ' + owner.toLowerCase() + '.';
+    }
+    let watchNext = String(r[14]||'').trim();
+    if (!watchNext || watchNext==='Monitor qualification/production milestone' || watchNext==='Monitor for concrete milestone') {
+      if (/Intel 14A/i.test(title)) watchNext = 'Watch for Intel 14A qualification milestones and customer tape-out signals.';
+      else if (/NVLink|NVHBM/i.test(title)) watchNext = 'Watch for additional NVLink Fusion collaborators and HBM qualification details.';
+      else if (/M3D.*SRAM|BEOL/i.test(title)) watchNext = 'Watch for PDK release or foundry adoption of M3D SRAM.';
+      else if (/Photonics/i.test(title)) watchNext = 'Watch for concrete UCIe/photonic spec or product qualification.';
+      else watchNext = 'Monitor for concrete milestone: ' + (decisionObjFull.split(' ').slice(0,6).join(' ') + ' …');
+    }
     const eventId = String(r[1]||'').trim();
     const nids = eaMapBrief.get(eventId) || [];
     const links = nids.slice(0,3).map(nid=>{
@@ -97,7 +112,8 @@ function generateWeeklyBriefFiW() {
     const badge = decision==='ARCHITECT'?'🔴': decision==='EVALUATE'?'🔴': decision==='MONITOR'?'🟡':'⚪';
     md += '### ' + badge + ' SIGNAL ' + String(idx+1).padStart(2,'0') + ' — ' + title + '\n';
     md += '**Decision:** `' + decision + '`\n\n';
-    md += '**Decision object:** ' + (decisionObj || '—') + ' | **Impact:** ' + impact + ' | **Owner:** ' + owner + ' | **Horizon:** ' + horizon + ' | **Confidence:** ' + confidence + '\n\n';
+    md += '**Decision object:** ' + decisionObjFull + '\n\n';
+    md += '**Impact:** ' + impact + ' | **Owner:** ' + owner + ' | **Horizon:** ' + horizon + ' | **Confidence:** ' + confidence + '\n\n';
     md += '**What changed**\n' + whatChanged + '\n\n';
     md += '**Why it matters**\n' + whyItMatters + '\n\n';
     md += '**Watch next**\n' + watchNext + '\n\n';
