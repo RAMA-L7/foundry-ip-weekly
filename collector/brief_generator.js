@@ -46,7 +46,8 @@ function generateWeeklyBriefFiW() {
   const normMapBrief = new Map();
   if (normSheet && normSheet.getLastRow()>1) {
     const nVals = normSheet.getDataRange().getValues().slice(1);
-    nVals.forEach(r=>{ const nid=String(r[0]||'').trim(); if(nid) normMapBrief.set(nid, {url:String(r[4]||String(r[5]||'')).trim(), title:String(r[3]||String(r[4]||'')).trim(), source:String(r[2]||String(r[3]||'')).trim()}); });
+    // NORMALIZED cols: 0 normalized_id,1 raw_id,2 source_id,3 source_name,4 title_normalized,5 url_canonical,6 published_at
+    nVals.forEach(r=>{ const nid=String(r[0]||'').trim(); if(nid) normMapBrief.set(nid, {url:String(r[5]||'').trim(), title:String(r[4]||'').trim(), source:String(r[3]||String(r[2]||'')).trim()}); });
   }
 
   // Selection policy: deterministic, decision relevance > evidence quality > diversity
@@ -95,12 +96,12 @@ function generateWeeklyBriefFiW() {
     }).filter(Boolean).join(' · ');
     const badge = decision==='ARCHITECT'?'🔴': decision==='EVALUATE'?'🔴': decision==='MONITOR'?'🟡':'⚪';
     md += '### ' + badge + ' SIGNAL ' + String(idx+1).padStart(2,'0') + ' — ' + title + '\n';
-    md += '**Decision:** `' + decision + '`' + (decisionObj?' `' + decisionObj + '`':'') + ' | **Impact:** ' + impact + ' | **Owner:** ' + owner + ' | **Horizon:** ' + horizon + ' | **Confidence:** ' + confidence + '\n\n';
+    md += '**Decision:** `' + decision + '`\n\n';
+    md += '**Decision object:** ' + (decisionObj || '—') + ' | **Impact:** ' + impact + ' | **Owner:** ' + owner + ' | **Horizon:** ' + horizon + ' | **Confidence:** ' + confidence + '\n\n';
     md += '**What changed**\n' + whatChanged + '\n\n';
     md += '**Why it matters**\n' + whyItMatters + '\n\n';
-    md += '**Decision object**\n' + decisionObj + '\n\n';
     md += '**Watch next**\n' + watchNext + '\n\n';
-    md += '**Evidence** — ' + (links || String(r[1]||'') + ' via `DS_v0.1`') + '\n';
+    md += '**Evidence**\n' + (links || String(r[1]||'') + ' via `DS_v0.1`') + '\n';
     if (links) md += 'Verify → ' + links + '\n';
     md += '\n---\n\n';
   });
